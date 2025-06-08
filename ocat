@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# ocat - Obscure sensitive data in export files
+# Usage: ocat [filename]
+# Default file: ~/secrets/secret-env-vars.env
+
+# Set the obscuring string as an environment variable
+export OBSCURE_STRING="<OBSCURED>"
+
+# Default file path
+DEFAULT_FILE="$HOME/secrets/secret-env-vars.env"
+
+# Use provided filename or default
+FILE_PATH="${1:-$DEFAULT_FILE}"
+
+# Check if file exists
+if [[ ! -f "$FILE_PATH" ]]; then
+    echo "Error: File '$FILE_PATH' not found" >&2
+    exit 1
+fi
+
+# Process the file line by line
+while IFS= read -r line || [[ -n "$line" ]]; do
+    # Check if line contains export (with or without comment)
+    if [[ "$line" =~ ^[[:space:]]*#?[[:space:]]*export[[:space:]]+([^=]+)=(.*)$ ]]; then
+        # Extract the variable name and value parts
+        var_part="${BASH_REMATCH[1]}"
+        value_part="${BASH_REMATCH[2]}"
+        
+        # Extract the prefix (comment and whitespace if any)
+        prefix=""
+        if [[ "$line" =~ ^([[:space:]]*#?[[:space:]]*export[[:space:]]+[^=]+=) ]]; then
+            prefix="${BASH_REMATCH[1]}"
+        fi
+        
+        # Handle different quoting scenarios
+        if [[ "$value_part" =~ ^\"(.*)\"(.*)$ ]]; then
+            # Double quoted value
+            actual_value="${BASH_REMATCH[1]}"
+            suffix="${BASH_REMATCH[2]}"
+            quote_prefix="\""
+            quote_suffix="\""
+        elif [[ "$value_part" =~ ^\'(.*)\'(.*)$ ]]; then
+            # Single quoted value
+            actual_value="${BASH_REMATCH[1]}"
+            suffix="${BASH_REMATCH[2]}"
+            quote_prefix="'"
+            quote_suffix="'"
+        else
+            # Unquoted value (may have comments after)
+            if [[ "$value_part" =~ ^([^[:space:]#]+)(.*)$ ]]; then
+                actual_value="${BASH_REMATCH[1]}"
+                suffix="${BASH_REMATCH[2]}"
+            else
+                actual_value="$value_part"
+                suffix=""
+            fi
+            quote_prefix=""
+            quote_suffix=""
+        fi
+        
+        # Determine how to obscure based on length
+        if [[ ${#actual_value} -lt 8 ]]; then
+            # Less than 8 characters - obscure entirely
+            obscured_value="$quote_prefix$OBSCURE_STRING$quote_suffix"
+        else
+            # 8 or more characters - show first 4 + obscured
+            first_four="${actual_value:0:4}"
+            obscured_value="$quote_prefix$first_four$OBSCURE_STRING$quote_suffix"
+        fi
+        
+        # Output the obscured line
+        echo "$prefix$obscured_value$suffix"
+    else
+        # Not an export line, output as-is
+        echo "$line"
+    fi
+done < "$FILE_PATH"
