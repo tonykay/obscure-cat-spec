@@ -42,6 +42,7 @@ export AAP2_PASSWORD="9b5b<OBSCURED>"
   * `export my-old-key="12345678"  # ie using double quotes`
   * `export my-old-key='12345678'  # ie using single quotes`
 * If an export is less than 8 characters then obscure the entire export ie `export my-password=changeme` becomes `export my-password=<OBSCURED>`
+* Support `-h` or `--help` argument that explains what `ocat` does and how to use it
 * Create a simple README.md
 
 

@@ -4,11 +4,56 @@
 # Usage: ocat [filename]
 # Default file: ~/secrets/secret-env-vars.env
 
+# Function to display help
+show_help() {
+    cat << EOF
+ocat - Obscure Cat Utility
+
+DESCRIPTION:
+    A utility that safely displays files containing export statements with
+    sensitive data obscured. Shows the first 4 characters of values 8+
+    characters long, or completely obscures shorter values.
+
+USAGE:
+    ocat [OPTIONS] [FILE]
+    
+OPTIONS:
+    -h, --help    Show this help message and exit
+    
+ARGUMENTS:
+    FILE          Path to the file containing export statements
+                  (default: ~/secrets/secret-env-vars.env)
+
+EXAMPLES:
+    ocat                           # Use default file
+    ocat my-secrets.env           # Use custom file
+    ocat /path/to/exports.env     # Use file with full path
+
+SUPPORTED FORMATS:
+    export VAR=value
+    export VAR="value"
+    export VAR='value'
+    # export VAR=value (commented exports are also obscured)
+
+OUTPUT EXAMPLES:
+    export API_KEY=longsecret123   ->   export API_KEY=long<OBSCURED>
+    export SHORT=abc               ->   export SHORT=<OBSCURED>
+    export QUOTED="secret123"     ->   export QUOTED="secr<OBSCURED>"
+
+EOF
+}
+
 # Set the obscuring string as an environment variable
 export OBSCURE_STRING="<OBSCURED>"
 
 # Default file path
 DEFAULT_FILE="$HOME/secrets/secret-env-vars.env"
+
+# Check for help flag
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    show_help
+    exit 0
+fi
 
 # Use provided filename or default
 FILE_PATH="${1:-$DEFAULT_FILE}"

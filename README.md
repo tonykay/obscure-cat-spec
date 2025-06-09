@@ -19,6 +19,10 @@ A bash utility that safely displays files containing export statements with sens
 ## Usage
 
 ```bash
+# Show help
+./ocat -h
+./ocat --help
+
 # Use default file (~/secrets/secret-env-vars.env)
 ./ocat
 
